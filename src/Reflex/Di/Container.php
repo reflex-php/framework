@@ -98,59 +98,56 @@ class Container implements ArrayAccess
      */
     public function create($abstract, $arguments = null)
     {
-        if (isset($instances[ $abstract ])) {
-            return $instances[ $abstract ];
+        if (! is_string($abstract)) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    "First parameter of %s must be string, %s given",
+                    __METHOD__,
+                    gettype($abstract)
+                )
+            );
         }
 
-        $provider   =   isset($this->providers[ $abstract ])
-            ? $this->providers[ $abstract ]
-            : null;
+        if (isset($this->instances[ $abstract ])) {
+            return $this->instances[ $abstract ];
+        }
 
-        if (! is_null($provider)) {
-            $instance   =   $provider->get($arguments);
-            
-            if (true === $provider->getShared()) {
-                $this->instances[ $abstract ]   =   $instance;
-            }
-        } else {
-            // We'll attempt to forge an instance here
+        // Get our provider
+        $provider   =   $this->raw($abstract);
+
+        if (is_null($provider)) {
             try {
-                $instance   =   $this->getForge()->forger($abstract, (array) $arguments);
+                return $this->getForge()->forger($abstract, $arguments);
             } catch (ReflectionException $e) {
                 throw new UndefinedResourceException($abstract);
             }
+        }
+        
+        $instance   =   $provider->get($arguments);
+        if (true === $provider->getShared()) {
+            $this->assign($instance, $abstract);
         }
 
         return $instance;
     }
 
     /**
-     * Singleton instance
-     * 
-     * @param  string $abstract  Thing to create
-     * @param  array  $arguments Arguments to invoke with
-     * 
-     * @return object
-     */
-    public function singleton($abstract, $arguments = null)
-    {
-        return $this->store($abstract, $arguments, true);
-    }
-
-    /**
      * Store a new provider
      * 
-     * @param  string  $key    Key to store under
-     * @param  mixed   $value  Value to store
-     * @param  boolean $shared Shared instance or not
+     * @param  string  $abstract Abstract to store
+     * @param  mixed   $concrete Concrete to store
+     * @param  boolean $shared   Shared instance or not
      * 
      * @return \Reflex\Di\Container Current Container instance
      */
-    public function store($key, $value, $shared = false)
+    public function store($abstract, $concrete = null, $shared = false)
     {
-        $provider               =   $this->makeProviderType($value);
+        $concrete OR $concrete = $abstract;
+
+        $provider   =   $this->makeProviderType($concrete);
         $provider->setShared($shared);
-        $this->providers[ $key ]=   $provider;
+
+        $this->providers[ $abstract ]   =   $provider;
 
         return $this;
     }
@@ -158,31 +155,44 @@ class Container implements ArrayAccess
     /**
      * Store if it doesn't already exist
      * 
-     * @param  string  $key    Key to store under
-     * @param  mixed   $value  Value to store
-     * @param  boolean $shared Shared instance or not
+     * @param  string  $abstract Key to store under
+     * @param  mixed   $concrete Value to store
+     * @param  boolean $shared   Shared instance or not
      * 
-     * @return \Reflex\Di\Container        Current Container instance
+     * @return \Reflex\Di\Container Current Container instance
      */
-    public function storeIf($key, $value, $shared = false)
+    public function storeIf($abstract, $concrete, $shared = false)
     {
-        if (false === $this->has($key)) {
-            return $this->store($key, $value, $shared);
+        if (false === $this->has($abstract)) {
+            return $this->store($abstract, $concrete, $shared);
         }
 
         return $this;
     }
 
     /**
+     * Singleton instance
+     * 
+     * @param  string $abstract Thing to create
+     * @param  array  $concrete Arguments to invoke with
+     * 
+     * @return object
+     */
+    public function singleton($abstract, $concrete = null)
+    {
+        return $this->store($abstract, $concrete, true);
+    }
+
+    /**
      * Have we stored something under this key?
      * 
-     * @param  string  $key Key to look-up
+     * @param  string $abstract abstract to look-up
      * 
      * @return boolean
      */
-    public function has($key)
+    public function has($abstract)
     {
-        return isset($this[ $key ]) || isset($this->instances[ $key ]);
+        return isset($this[ $abstract ]) || isset($this->instances[ $abstract ]);
     }
 
     /**
@@ -212,7 +222,7 @@ class Container implements ArrayAccess
      */
     public function raw($key)
     {
-        return array_key_exists($key, $this->providers)
+        return isset($this->providers[ $key ])
             ? $this->providers[ $key ]
             : null;
     }
