@@ -1,0 +1,35 @@
+{
+    "name": "reflex/framework",
+    "description": "Reflex Framework",
+    "keywords": ["reflex", "framework"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name":     "Reflex Community",
+            "homepage": "http://reflex.aziri.us/contributors"
+        }
+    ],
+    "require": {
+        "php":                          ">=5.3.0",
+        "ircmaxell/password-compat":    "1.0.*",
+        "filp/whoops":                  "1.0.6",
+        "monolog/monolog":              "1.5.*",
+        "swiftmailer/swiftmailer":      "5.0.*",
+        "patchwork/utf8":               "1.1.*",
+        "illuminate/support":           "4.0.*",
+        "symfony/filesystem":           "dev-master"
+    },
+    "require-dev": {
+        "mockery/mockery": "dev-master",
+        "phpunit/phpunit": "dev-master"
+    },
+    "autoload": {
+        "psr-0": {
+            "Reflex\\": "src/"
+        },
+        "files": [
+            "src/Reflex/Support/support.php"
+        ]
+    },
+    "minimum-stability": "dev"
+}
