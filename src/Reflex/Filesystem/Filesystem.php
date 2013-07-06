@@ -20,7 +20,7 @@ use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
  * Filesystem
  *
  * Builds upon Symfony's Filesystem component
- * with a few addition handy features.
+ * with a few additional handy features.
  * 
  * @package    Reflex
  * @subpackage Core

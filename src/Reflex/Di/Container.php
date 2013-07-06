@@ -13,9 +13,12 @@
 namespace Reflex\Di;
 
 use ArrayAccess;
+use Closure;
 use InvalidArgumentException;
+use ReflectionFunction;
 use ReflectionException;
 use Reflex\Di\Exceptions\UndefinedResourceException;
+use Reflex\Di\ProviderTypes\Lazy;
 
 /**
  * Container
@@ -51,7 +54,14 @@ class Container implements ArrayAccess
      * 
      * @var \Reflex\Di\ProviderTypes\ProviderTypeBase[]
      */
-    protected $providers  =   array();
+    protected $providers    =   array();
+
+    /**
+     * Callbacks
+     * 
+     * @var Closure[]
+     */
+    protected $callbacks    =   array();
 
     /**
      * Instantiate a new instance
@@ -127,6 +137,8 @@ class Container implements ArrayAccess
         if (true === $provider->getShared()) {
             $this->assign($instance, $abstract);
         }
+
+        $this->fireCallbacks($instance);
 
         return $instance;
     }
@@ -326,9 +338,9 @@ class Container implements ArrayAccess
             );
         }
 
-        $provider   =   $this[ $key ];
+        $provider   =   $this->raw($key);
 
-        if (! $provider instanceof Lazy) {
+        if (! ($provider instanceof Lazy)) {
             throw new InvalidArgumentException(
                 sprintf(
                     "The identifier [%s] isn't a Lazy definition.",
@@ -337,10 +349,15 @@ class Container implements ArrayAccess
             );
         }
 
+        $mixed   =   $provider->getMixed();
+
         return $this->store(
             $key,
-            function ($c) use ($callable, $provider) {
-                return $callable($provider($c), $c);
+            function ($c) use ($callable, $mixed) {
+                return $callable(
+                    $mixed($c),
+                    $c
+                );
             }
         );
     }
@@ -417,8 +434,6 @@ class Container implements ArrayAccess
     {
         $this->factory  =   $factory ?: new ProviderFactory;
 
-        $this->factory->setContainer($this);
-
         return $this;
     }
 
@@ -442,6 +457,63 @@ class Container implements ArrayAccess
     public function getProviders()
     {
         return $this->providers;
+    }
+
+    /**
+     * Store a new callback
+     * 
+     * @param  Closure  $callback Callback
+     * 
+     * @return \Reflex\Di\Container
+     */
+    public function callback(Closure $callback)
+    {
+        $this->callbacks[]  =   $callback;
+
+        return $this;
+    }
+
+    /**
+     * Call stored callbacks
+     * 
+     * @param  object $object Object to use
+     * 
+     * @return void
+     */
+    protected function fireCallbacks($object)
+    {
+        foreach ($this->callbacks as $callback) {
+            if ($this->doesClosureHintObject($object, $callback)) {
+                call_user_func($callback, $object);
+            }
+        }
+    }
+
+    /**
+     * Check type hinting for callback
+     * 
+     * @param  object  $object  Object to look for
+     * @param  Closure $closure Closure to check
+     * 
+     * @return boolean
+     */
+    protected function doesClosureHintObject($object, Closure $closure)
+    {
+        $reflection =   new ReflectionFunction($closure);
+
+        if (0 === $reflection->getNumberOfParameters()) {
+            return false;
+        }
+
+        $parameters =   $reflection->getParameters();
+        $first      =   array_shift($parameters);
+        $class      =   $first->getClass();
+
+        if (! is_null($class)) {
+            return is_a($object, $class->getName());
+        }
+
+        return false;
     }
 
     /**

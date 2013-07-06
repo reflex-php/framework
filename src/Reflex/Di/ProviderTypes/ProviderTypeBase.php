@@ -77,6 +77,30 @@ abstract class ProviderTypeBase
     }
 
     /**
+     * Get the mixed data
+     * 
+     * @return mixed
+     */
+    public function getMixed()
+    {
+        return $this->mixed;
+    }
+
+    /**
+     * Set the mixed data
+     * 
+     * @param mixed $mixed Mixed data
+     * 
+     * @return \Reflex\Di\ProviderTypes\ProviderTypeBase
+     */
+    public function setMixed($mixed)
+    {
+        $this->mixed    =   $mixed;
+
+        return $this;
+    }
+
+    /**
      * Store Container instance
      * 
      * @param Container $container Container instance to store

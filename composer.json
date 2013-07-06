@@ -29,6 +29,9 @@
         },
         "files": [
             "src/Reflex/Support/support.php"
+        ],
+        "classmap": [
+            "tests/Di/Stubs/"
         ]
     },
     "minimum-stability": "dev"

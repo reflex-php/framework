@@ -54,13 +54,14 @@ if (! function_exists('is_declared')) {
     /**
      * Checks to see if a class, interface or trait is declared
      * 
-     * @param  string  $string The name to check for
+     * @param  string  $string   The name to check for
+     * @param  boolean $autoload Autoload flag
      * 
      * @return boolean
      *
      * @throws InvalidArgumentException If Parameter isn't a string
      */
-    function is_declared($string)
+    function is_declared($string, $autoload = false)
     {
         if (! is_string($string)) {
             throw new InvalidArgumentException(
@@ -70,13 +71,14 @@ if (! function_exists('is_declared')) {
             );
         }
 
-        $return =   class_exists($string, false)
-            || interface_exists($string, false);
-
+        // PHP 5.4+ has traits
         if (version_compare(phpversion(), '>=', '5.4.0')) {
-            $return =   $return || trait_exists($string, false);
+            return class_exists($string, $autoload)
+                || interface_exists($string, $autoload)
+                || trait_exists($string, $autoload);
         }
-
-        return $return;
+        
+        return class_exists($string, $autoload)
+            || interface_exists($string, $autoload);
     }
 }

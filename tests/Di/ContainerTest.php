@@ -12,11 +12,11 @@
 
 use Reflex\Di\Container;
 
-require __DIR__ . '/Stubs/ContainerStub.php';
-require __DIR__ . '/Stubs/InterfaceStub.php';
-require __DIR__ . '/Stubs/InterfaceImplementationStub.php';
-require __DIR__ . '/Stubs/DependentStub.php';
-require __DIR__ . '/Stubs/DeeperDependentStub.php';
+// require __DIR__ . '/Stubs/ContainerStub.php';
+// require __DIR__ . '/Stubs/InterfaceStub.php';
+// require __DIR__ . '/Stubs/InterfaceImplementationStub.php';
+// require __DIR__ . '/Stubs/DependentStub.php';
+// require __DIR__ . '/Stubs/DeeperDependentStub.php';
 
 /**
  * ContainerTest
@@ -77,12 +77,9 @@ class ContainerTest extends PHPUnit_Framework_TestCase
     public function testResolutionOfAbstracts()
     {
         $container      =   $this->container;
-        $interface      =   'InterfaceStub';
-        $implementation =   'InterfaceImplementationStub';
-        $container->store($interface, $implementation);
+        $container->store('InterfaceStub', 'InterfaceImplementationStub');
         $actual         =   $container->create('InterfaceStub');
-
-        $this->assertInstanceOf($implementation, $actual);
+        $this->assertInstanceOf('InterfaceImplementationStub', $actual);
     }
 
     public function testResolutionOfRecursiveDependencies()
@@ -108,5 +105,45 @@ class ContainerTest extends PHPUnit_Framework_TestCase
         $actual             =   $container['bound'];
 
         $this->assertInstanceOf($expected, $actual);
+    }
+
+    public function testExtension()
+    {
+        $container          =   $this->container;
+        $container['test']  =   function () {
+            return 'foo';
+        };
+
+        $container->extend(
+            'test',
+            function ($old) {
+                return $old . 'bar';
+            }
+        );
+
+        $container->extend(
+            'test',
+            function ($old) {
+                return $old . 'baz';
+            }
+        );
+
+        $this->assertEquals('foobarbaz', $container->create('test'));
+    }
+
+    public function testCallbacks()
+    {
+        $container          =   $this->container;
+        $container['foo']   =   function () {
+            return new stdClass;
+        };
+        $container->callback(
+            function (stdClass $object) {
+                return $object->bar =   'baz';
+            }
+        );
+        $actual =   $container['foo']->bar;
+
+        $this->assertEquals('baz', $actual);
     }
 }
