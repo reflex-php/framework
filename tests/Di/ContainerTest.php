@@ -12,12 +12,6 @@
 
 use Reflex\Di\Container;
 
-// require __DIR__ . '/Stubs/ContainerStub.php';
-// require __DIR__ . '/Stubs/InterfaceStub.php';
-// require __DIR__ . '/Stubs/InterfaceImplementationStub.php';
-// require __DIR__ . '/Stubs/DependentStub.php';
-// require __DIR__ . '/Stubs/DeeperDependentStub.php';
-
 /**
  * ContainerTest
  *
